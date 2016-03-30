@@ -23,4 +23,7 @@ after_success:
   - "[[ -n $TRAVIS_TAG ]] && ./build.sh deploy premek/64pixels"
 env:
   global:
-    secure: LLfq9nWX+LfDVQWH3q0T0Kwvuk2bCKCA4lYEkmrr/UaAmh29DM9C7yrwnXcvhw3Lz5RjTugnjzEJWDkDzJfRfvEmQuEFcE/UCPkAreXeO0z8n6pd62ip6S43IzE2qRsuvZdcwiHCEMHSwb+mdvz8HgoJ/p90Le8OYOr5ikMou5HhLMvI+cM10G5vRDFNZ+QzbFTiiaPox8y2a4RjcmzJV4JFnLtIhNmdseJJjGW5+zL4mDBH4dxRISqFl8VePnea/SZv0htekwovY577mrcYYF1bnPnKzlk56Vaw61yJGVWvuo4jiF6kIjGWBeTAMcVGmQxzzpr+zwpRZ9flVxsh26RxvN0zaVL2TytCP+mDCAxLUrVJjAfd/3QlE1bo6GGY9FAnC8/xg6SO9ju0bEwweQBTukiHcZoYwIW+2xSF1zqi0gbANgL8epLjdBmhZpKX0uTlOZfNtvJBDaT5X8djZYsB5s3p7vdn5VGSGNUZ0BP623/4gdzzAhSY+slmN0wsFaJajhKNWwZQFPGcWRplXyPM8m7KgbZU+0qA358l/Ks7ACupulnLp1px7JlnfD3t5HvST+g6kYWtk2QL54No9Nyv7m5IxnBbY1B6Iu7LzJzdo69GoWh46B9oRC8kYdQmDiqkrjT+d8PITd3RyAPgN+bQI7L3svNBdPE63BCe+Ec=
+    - secure: R6lRUgY4gphBigptj5AKfYB5cTds/U4hNrSCJkisHYADcn1qQncdqZ8e3ZLJe2w/WFcOhZLVlLsL8k+0T/mQa9fSgzgdQJLrl0Ub0LF+1EbQDnnbfcCxI7mAm10jCVzP1AGuMQql3qO8dgr3UwbvlbFfQNMRS5+HZz7XRBFyyUQyBONs88lZF4CADWK6yYBu/SysmU9uKEjijRWz9BqA4JpHTEvIUooR1siwdlYTnnrepVvDSlq66/LdNs02Gv8erKp22Ehni1EMTpMDQf7lJ5HDJw6tmR1G2sk6ug+lFfSwyGLJbvomQ2C/aMHM1IZxcYbtlET18YEQQww6KNwMHMUir7GaqV8gM1ICLRh5X7deVMxvSgbKSN5Vx8HtM1ZWM4fRSc74dgJ6th7Meo091w2plSdmZfNpDoZZPaV9HFylWB5SJzCESmasOIVZtOgX6i+Jv62ji/n4LqpG91wB61JjfiX2Ubql8d4/43JBMODA9jWy3l+zD4ugkAopIL8p3sTsdgdLBsnfircx9fj+Eu9rRuedaTlfYYEggPur/8zQEXxT0USMoRb15x5ITNMXQGwcI2//l9JBIE+xUCw3/NxWw3s6AENw7NiF23kENyyPaWF6/mKWnOcc191NiR8XhnGAd+qkXguURkAlNrgR/azsK2LNslGPTUpHL/Po7iA=
+
+# curl -u premysl.vyhnal@gmail.com   -d '{"scopes":["public_repo"],"note":"XXX token name XXX"}'   https://api.github.com/authorizations
+# travis encrypt GH_TOKEN=<token> --add
