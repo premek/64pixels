@@ -21,6 +21,13 @@ local maxspeed = 80
 local consumption = .001
 local distance = 0
 
+local palette = {
+{43,8,6},
+{123,163,139},
+{220,208,160},
+{255,255,184},
+{196,32,41},
+}
 
 local texts = {
   [0] = "Press up arrow\nto start",
@@ -62,7 +69,7 @@ function love.load()
   music:setVolume(.7)
   music:play()
 
-  for _,f in ipairs({"bg1", "fuel", "road", "car"}) do
+  for _,f in ipairs({"bg1", "fuel", "road", "car", "sign"}) do
     img[f] = {}
     img[f].img = love.graphics.newImage("img/"..f..".png")
     img[f].quads = getQuads(img[f].img, a)
@@ -105,10 +112,9 @@ function driving:update(dt)
   distance = distance + speed * dt * 0.01
 
   img.fuel.quads.current = img.fuel.quads[math.floor(math.max(0,math.min(#img.fuel.quads-1,#img.fuel.quads*fuel)))]
-
   img.road.quads.current = img.road.quads[math.floor(distance*100) % #img.road.quads]
-
   img.car.quads.current = img.car.quads[math.floor(distance*10) % #img.car.quads]
+  img.sign.quads.current = img.sign.quads[math.floor(distance*18) % #img.sign.quads]
 
   if fuel <= 0 then Signal.emit('out_of_fuel') end
   if origspeed == 0 and speed > 0 then Signal.emit('started') end
@@ -122,8 +128,9 @@ function driving:draw()
   love.graphics.draw(img.fuel.img, img.fuel.quads.current, 0, 0)
   love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
   love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
+  love.graphics.draw(img.sign.img, img.sign.quads.current, 0, 0)
   --love.graphics.rectangle("fill",3,3,math.floor(speed),1)
-  love.graphics.setColor(34,32,52)
+  love.graphics.setColor(palette[1])
   love.graphics.printf(math.floor(speed), 0, 1, a, "center")
   love.graphics.print(math.floor(distance), 1, 1)
 
@@ -133,12 +140,12 @@ end
 
 --------------
 function reading:draw()
-  love.graphics.setColor(255,255,255)
+  love.graphics.setColor(palette[3])
   love.graphics.rectangle("fill", 0, 0, a, a)
   local textKey = sortedTextsKeys[1]
   for _,key in pairs(sortedTextsKeys) do if distance > key then textKey = key end end
 
-  love.graphics.setColor(34,32,52)
+  love.graphics.setColor(palette[1])
   love.graphics.print(texts[textKey], 1, 1)
 end
 
@@ -163,5 +170,5 @@ end
 --------------
 
 Signal.register('stopped', function()
-  Gamestate.push(reading)
+  ---Gamestate.push(reading)
 end)
