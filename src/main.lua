@@ -70,7 +70,7 @@ function love.load()
     img[f].quads.current = img[f].quads[0]
   end
 
-  love.graphics.setNewFont( "font/minpix.ttf", 7 )
+  love.graphics.setNewFont( "font/tom-thumb.bdf", 6 )
 
   for k in pairs(texts) do
     table.insert(sortedTextsKeys, k)
