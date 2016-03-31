@@ -1,10 +1,15 @@
 local Signal = require 'lib.hump.signal'
 local Gamestate = require "lib.hump.gamestate"
 
-local driving = {}
-local reading = {}
+local state = {
+  intro = {},
+  driving = {},
+  reading = {},
+  outro = {},
+}
 
 local love = love
+local debug = false
 
 local music
 local img = {}
@@ -30,7 +35,7 @@ local palette = {
 }
 
 local texts = {
-  [0] = "Press up arrow\nto start",
+  [0] = "Press up arrow",
   [2] = "Are we there yet?",
   [10] = "We will not get\nany further\nwithout more fuel",
   [50] = "There's no way back",
@@ -47,7 +52,7 @@ local texts = {
 }
 local sortedTextsKeys = {}
 
-local getQuads = function(image, a)
+local getQuads = function(image)
   local quads={}
   for i=0,image:getWidth()/a do
     quads[i] = love.graphics.newQuad(a*i, 0, a, a, image:getWidth(), image:getHeight())
@@ -72,7 +77,7 @@ function love.load()
   for _,f in ipairs({"bg1", "fuel", "road", "car", "sign"}) do
     img[f] = {}
     img[f].img = love.graphics.newImage("img/"..f..".png")
-    img[f].quads = getQuads(img[f].img, a)
+    img[f].quads = getQuads(img[f].img)
     --img[f].counter = 0
     img[f].quads.current = img[f].quads[0]
   end
@@ -86,8 +91,8 @@ function love.load()
   for k,v in ipairs(sortedTextsKeys) do print (k,v) end
 
   Gamestate.registerEvents()
-  Gamestate.switch(driving)
-  Gamestate.push(reading)
+  Gamestate.switch(state.driving)
+  Gamestate.push(state.reading)
 
 end
 
@@ -99,7 +104,7 @@ end
 --------------
 
 
-function driving:update(dt)
+function state.driving:update(dt)
   local origspeed = speed
   if love.keyboard.isDown("up") and fuel > 0 then
     speed = speed + dt*accel
@@ -122,7 +127,7 @@ function driving:update(dt)
 
 end
 
-function driving:draw()
+function state.driving:draw()
   love.graphics.setColor(255,255,255)
   love.graphics.draw(img.bg1.img, 0, 0)
   love.graphics.draw(img.fuel.img, img.fuel.quads.current, 0, 0)
@@ -131,15 +136,20 @@ function driving:draw()
   love.graphics.draw(img.sign.img, img.sign.quads.current, 0, 0)
   --love.graphics.rectangle("fill",3,3,math.floor(speed),1)
   love.graphics.setColor(palette[1])
-  love.graphics.printf(math.floor(speed), 0, 1, a, "center")
-  love.graphics.print(math.floor(distance), 1, 1)
+  love.graphics.print("E", 44, 1)
+  love.graphics.print("F", 60, 1)
 
+  if debug then
+    love.graphics.printf(math.floor(speed), 0, 1, a, "center")
+    love.graphics.print(math.floor(distance), 1, 1)
+    love.graphics.print(math.floor(fuel*1000)/1000, 1, 8)
+  end
 end
 
 
 
 --------------
-function reading:draw()
+function state.reading:draw()
   love.graphics.setColor(palette[3])
   love.graphics.rectangle("fill", 0, 0, a, a)
   local textKey = sortedTextsKeys[1]
@@ -149,13 +159,14 @@ function reading:draw()
   love.graphics.print(texts[textKey], 1, 1)
 end
 
-function reading:keypressed(key)
+function state.reading:keypressed(key)
   if key=='up' then Gamestate.pop() end
 end
 
 -----------
 
 function love.keypressed(key)
+  if key=='d' then debug = not debug end
   if key=='escape' then love.event.quit() end
   if key=='+' or key=='kp+' then scale = scale + 1; scaleWindow() end
   if key=='-' or key=='kp-' then scale = scale - 1; scaleWindow() end
@@ -170,5 +181,5 @@ end
 --------------
 
 Signal.register('stopped', function()
-  ---Gamestate.push(reading)
+  Gamestate.push(state.reading)
 end)
