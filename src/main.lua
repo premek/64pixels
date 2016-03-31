@@ -34,7 +34,8 @@ local texts = {
   "Didn't I had someone with me?",
   "She will not remember",
   "They are safe there",
-  "They are safer where they are now"
+  "They are safer where they are now",
+  "I will miss her",
 
 }
 local sortedTextsKeys = {}
@@ -69,7 +70,7 @@ function love.load()
     img[f].quads.current = img[f].quads[0]
   end
 
-  love.graphics.setNewFont( 7 )
+  love.graphics.setNewFont( "font/minpix.ttf", 7 )
 
   for k in pairs(texts) do
     table.insert(sortedTextsKeys, k)
