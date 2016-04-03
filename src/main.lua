@@ -3,8 +3,9 @@ local Timer = require 'lib.hump.timer'
 local Gamestate = require "lib.hump.gamestate"
 
 local state = {
-  intro = {},
-  driving = {},
+  mainmenu = {d=0, locked = nil},
+  intro = {d=0, ends=nil, speed=30},
+  driving = {d=0, locked = nil, lastgas = false},
   reading = {},
   outro = {},
 }
@@ -12,8 +13,9 @@ local state = {
 local love = love
 local debug = false
 
-local music
+local music = {}
 local img = {}
+local sfx = {}
 
 local a=64 -- pixels
 local scale = 8
@@ -23,7 +25,7 @@ local speed = 0
 local accel = 45
 local friction = 37
 local maxspeed = 80
-local consumption = .005
+local consumption = .0001
 local distance = 0
 
 local palette = {
@@ -33,6 +35,9 @@ local palette = {
 {255,255,184},
 {196,32,41},
 }
+
+
+local introText = "Drive away. To a different city. Or to the woods maybe. Listen to the radio. Watch the landscape. Stop sometimes to think and enjoy the countryside if you want to. Relax.          Hold up arrow key to accelerate"
 
 local texts = {
   [0] = "Press up arrow",
@@ -52,10 +57,9 @@ local texts = {
 }
 local sortedTextsKeys = {}
 
-local sfx = {}
 
 
---------------
+-------------- load
 
 
 local getQuads = function(image)
@@ -75,22 +79,25 @@ function love.load()
   scaleWindow()
   love.graphics.setDefaultFilter("nearest")
 
-  music = love.audio.newSource( 'music/Stunts (1990) - Soundtrack.mp3', 'stream' )
-  music:setLooping( true )
-  music:setVolume(.7)
-  --music:play()
+  music[1] = love.audio.newSource( 'music/i think i get it.mp3', 'stream' )
+  music[2] = love.audio.newSource( 'music/think of me think of us.mp3', 'stream' )
+  music[1]:setVolume(0.8)
+  music[2]:setVolume(0.8)
 
   for _,v in ipairs(love.filesystem.getDirectoryItems("sfx")) do
-    sfx[v:match("^(.+)%..+$")] = love.audio.newSource("sfx/"..v, "static")
+    local k = v:match("^(.+)%..+$")
+    sfx[k] = love.audio.newSource("sfx/"..v, "static")
+    sfx[k]:setVolume(0.8)
   end
-  sfx.idle:setLooping(true)
-  sfx.going:setLooping(true)
+  for _,v in ipairs({"idle", "going"}) do sfx[v]:setLooping(true) end
+  sfx.radiofm:setVolume(1)
+  sfx.cardooropenclose4:setVolume(1)
 
-  for _,f in ipairs({"bg1", "fuel", "road", "car", "sign"}) do
+  for _,v in ipairs(love.filesystem.getDirectoryItems("img")) do
+    local f = v:match("^(.+)%..+$")
     img[f] = {}
     img[f].img = love.graphics.newImage("img/"..f..".png")
     img[f].quads = getQuads(img[f].img)
-    --img[f].counter = 0
     img[f].quads.current = img[f].quads[0]
   end
 
@@ -100,13 +107,11 @@ function love.load()
     table.insert(sortedTextsKeys, k)
   end
   table.sort(sortedTextsKeys)
-  for k,v in ipairs(sortedTextsKeys) do print (k,v) end
 
   Gamestate.registerEvents()
-  Gamestate.switch(state.driving)
-  --Gamestate.push(state.reading)
+  Gamestate.switch(state.mainmenu)
 
-  Signal.emit('game_started') -- TODO after main menu?
+  Signal.emit('game_started')
 end
 
 
@@ -120,19 +125,24 @@ end
 
 
 
--------------- driving
-local lastgas = false
 
+
+-------------- driving
 function state.driving:update(dt)
   local origspeed = speed
-  local gas = love.keyboard.isDown("up") and fuel > 0
-  if gas then
-    speed = speed + dt*accel
-    if not lastgas then Signal.emit('accel_start') end
+
+  if state.driving.d < state.driving.locked then
+    state.driving.d = state.driving.d + dt
   else
-    if lastgas then Signal.emit('accel_end') end
+    local gas = love.keyboard.isDown("up") and fuel > 0
+    if gas then
+      speed = speed + dt*accel
+      if not state.driving.lastgas then Signal.emit('accel_start') end
+    else
+      if state.driving.lastgas then Signal.emit('accel_end') end
+    end
+    state.driving.lastgas = gas
   end
-  lastgas = gas
 
   speed = speed - dt*friction -- FIXME ???
   speed = math.max(math.min(maxspeed, speed), 0)
@@ -191,6 +201,52 @@ function state.reading:keypressed(key)
 end
 
 
+-------------- mainmenu
+function state.mainmenu:update(dt)
+  state.mainmenu.d = state.mainmenu.d + dt
+end
+function state.mainmenu:draw()
+  love.graphics.setColor(palette[3])
+  love.graphics.rectangle("fill", 0, 0, a, a)
+  love.graphics.setColor(palette[1])
+  love.graphics.printf("64 Pixels\nRoad Trip", 0, 10, a, "center")
+  if state.mainmenu.d > state.mainmenu.locked then
+    love.graphics.printf("Press any key\nto start", 0, 40, a, "center")
+  end
+  love.graphics.setColor({0,0,0,255-state.mainmenu.d*255})
+  love.graphics.rectangle("fill", 0, 0, a, a)
+end
+
+function state.mainmenu:keypressed(key)
+  if state.mainmenu.d > state.mainmenu.locked then
+    Gamestate.switch(state.intro)
+  end
+end
+
+
+------------- intro
+function state.intro:enter()
+  state.intro.ends = (introText:len()*4+a) / state.intro.speed
+end
+function state.intro:update(dt)
+  state.intro.d = state.intro.d + dt
+  print(state.intro.d, state.intro.ends)
+  if state.intro.d > state.intro.ends then
+    Gamestate.switch(state.driving)
+    Signal.emit('driving_started')
+  end
+end
+
+function state.intro:draw()
+  love.graphics.setColor(255,255,255)
+  love.graphics.draw(img.bg1.img, 0, 0)
+  love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
+  love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
+
+  love.graphics.setColor(palette[1])
+  love.graphics.print(introText, 64 - math.floor(state.intro.d*state.intro.speed), 9)
+end
+
 
 --------------
 
@@ -211,10 +267,23 @@ local stopAllSfx = function()
 end
 
 Signal.register('game_started', function()
-  local delay = 1
-  table.insert(sfxTimers, Timer.after(delay, function() sfx.start:play() end))
-  table.insert(sfxTimers, Timer.after(delay + sfx.start:getDuration(), function() sfx.idle:play() end))
+  local delay = .5
+  Timer.after(delay, function() sfx.cardooropenclose4:play() end)
+  delay = delay + sfx.cardooropenclose4:getDuration()
+  Timer.after(delay, function() sfx.start:play() end)
+  delay = delay + sfx.start:getDuration()
+  Timer.after(delay, function() sfx.idle:play() end)
+  state.mainmenu.locked = delay
 end)
+
+Signal.register('driving_started', function()
+  sfx.radiofm:play()
+  state.driving.locked = sfx.radiofm:getDuration()
+
+  Timer.after(sfx.radiofm:getDuration(), function() music[1]:play() end)
+  Timer.after(sfx.radiofm:getDuration() + music[1]:getDuration(), function() music[2]:play() end)
+end)
+
 
 Signal.register('accel_start', function()
   stopAllSfx()
