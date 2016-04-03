@@ -3,11 +3,9 @@ local Timer = require 'lib.hump.timer'
 local Gamestate = require "lib.hump.gamestate"
 
 local state = {
-  mainmenu = {d=0, locked = nil},
-  intro = {d=0, ends=nil, speed=30},
-  driving = {d=0, locked = nil, lastgas = false},
-  reading = {},
-  outro = {},
+  mainmenu = {d=0, locked = 0},
+  reading = {d=0, ends=0, speed=40, textKey=0, sortedTextsKeys={}, displayed={}},
+  driving = {started=0, d=0, locked = 0, lastgas = false},
 }
 
 local love = love
@@ -25,7 +23,7 @@ local speed = 0
 local accel = 45
 local friction = 37
 local maxspeed = 80
-local consumption = .0001
+local consumption = .00002
 local distance = 0
 
 local palette = {
@@ -36,11 +34,8 @@ local palette = {
 {196,32,41},
 }
 
-
-local introText = "Drive away. To a different city. Or to the woods maybe. Listen to the radio. Watch the landscape. Stop sometimes to think and enjoy the countryside if you want to. Relax.          Hold up arrow key to accelerate"
-
 local texts = {
-  [0] = "Press up arrow",
+  [0] = "Drive away. To a different city. Or to the woods maybe. Listen to the radio. Watch the landscape. Stop sometimes to think and enjoy the countryside if you want to. Relax.          Hold up arrow key to accelerate",
   [2] = "Are we there yet?",
   [10] = "We will not get\nany further\nwithout more fuel",
   [50] = "There's no way back",
@@ -55,8 +50,6 @@ local texts = {
   "I will miss her",
 
 }
-local sortedTextsKeys = {}
-
 
 
 -------------- load
@@ -104,9 +97,9 @@ function love.load()
   love.graphics.setNewFont( "font/tom-thumb.bdf", 6 )
 
   for k in pairs(texts) do
-    table.insert(sortedTextsKeys, k)
+    table.insert(state.reading.sortedTextsKeys, k)
   end
-  table.sort(sortedTextsKeys)
+  table.sort(state.reading.sortedTextsKeys)
 
   Gamestate.registerEvents()
   Gamestate.switch(state.mainmenu)
@@ -184,23 +177,6 @@ end
 
 
 
-
--------------- reading
-function state.reading:draw()
-  love.graphics.setColor(palette[3])
-  love.graphics.rectangle("fill", 0, 0, a, a)
-  local textKey = sortedTextsKeys[1]
-  for _,key in pairs(sortedTextsKeys) do if distance > key then textKey = key end end
-
-  love.graphics.setColor(palette[1])
-  love.graphics.print(texts[textKey], 1, 1)
-end
-
-function state.reading:keypressed(key)
-  if key=='up' then Gamestate.pop() end
-end
-
-
 -------------- mainmenu
 function state.mainmenu:update(dt)
   state.mainmenu.d = state.mainmenu.d + dt
@@ -219,40 +195,54 @@ end
 
 function state.mainmenu:keypressed(key)
   if state.mainmenu.d > state.mainmenu.locked then
-    Gamestate.switch(state.intro)
+    Signal.emit('menu_start') -- FIXME
   end
 end
 
 
-------------- intro
-function state.intro:enter()
-  state.intro.ends = (introText:len()*4+a) / state.intro.speed
-end
-function state.intro:update(dt)
-  state.intro.d = state.intro.d + dt
-  print(state.intro.d, state.intro.ends)
-  if state.intro.d > state.intro.ends then
+------------- reading
+
+function state.reading:update(dt)
+  state.reading.d = state.reading.d + dt
+
+  if state.reading.d > state.reading.ends then
+    state.reading.displayed[state.reading.textKey] = true
     Gamestate.switch(state.driving)
     Signal.emit('driving_started')
   end
 end
 
-function state.intro:draw()
+function state.reading:draw()
   love.graphics.setColor(255,255,255)
   love.graphics.draw(img.bg1.img, 0, 0)
   love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
   love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
 
   love.graphics.setColor(palette[1])
-  love.graphics.print(introText, 64 - math.floor(state.intro.d*state.intro.speed), 9)
+  love.graphics.print(texts[state.reading.textKey], 64 - math.floor(state.reading.d*state.reading.speed), 9)
 end
 
 
 --------------
 
-Signal.register('stopped', function()
-  --Gamestate.push(state.reading)
-end)
+local startReading = function()
+
+  state.reading.d = 0
+  state.reading.textKey = state.reading.sortedTextsKeys[1]
+  for _,key in pairs(state.reading.sortedTextsKeys) do
+    if distance > key then
+      state.reading.textKey = key
+    end
+  end
+  state.reading.ends = (texts[state.reading.textKey]:len()*4+a) / state.reading.speed
+
+  if not state.reading.displayed[state.reading.textKey] then
+    Gamestate.push(state.reading)
+  end
+end
+
+Signal.register('stopped', startReading)
+Signal.register('menu_start', startReading)
 
 
 
@@ -277,6 +267,9 @@ Signal.register('game_started', function()
 end)
 
 Signal.register('driving_started', function()
+  if state.driving.started > 0 then return end
+  state.driving.started = state.driving.started + 1
+
   sfx.radiofm:play()
   state.driving.locked = sfx.radiofm:getDuration()
 
