@@ -4,7 +4,7 @@ local Gamestate = require "lib.hump.gamestate"
 
 local state = {
   mainmenu = {d=0, locked = 0},
-  reading = {d=0, ends=0, speed=40, textKey=0, sortedTextsKeys={}, displayed={}},
+  reading = {d=0, ends=0, speed=40000, textKey=0, sortedTextsKeys={}, displayed={}},
   driving = {started=0, d=0, locked = 0, lastgas = false},
 }
 
@@ -23,7 +23,7 @@ local speed = 0
 local accel = 45
 local friction = 37
 local maxspeed = 80
-local consumption = .00002
+local consumption = .00004
 local distance = 0
 
 local palette = {
@@ -72,9 +72,9 @@ function love.load()
   scaleWindow()
   love.graphics.setDefaultFilter("nearest")
 
-  music[1] = love.audio.newSource( 'music/i think i get it.mp3', 'stream' )
-  music[2] = love.audio.newSource( 'music/think of me think of us.mp3', 'stream' )
-  music[1]:setVolume(0.8)
+  music[1] = love.audio.newSource( 'music/think of me think of us.mp3', 'stream' )
+  music[2] = love.audio.newSource( 'music/i think i get it.mp3', 'stream' )
+  music[1]:setVolume(0.85)
   music[2]:setVolume(0.8)
 
   for _,v in ipairs(love.filesystem.getDirectoryItems("sfx")) do
@@ -102,9 +102,9 @@ function love.load()
   table.sort(state.reading.sortedTextsKeys)
 
   Gamestate.registerEvents()
-  Gamestate.switch(state.mainmenu)
+  Gamestate.switch(state.driving)  --mainmenu
 
-  Signal.emit('game_started')
+  --Signal.emit('game_started')
 end
 
 
@@ -148,6 +148,7 @@ function state.driving:update(dt)
   img.road.quads.current = img.road.quads[math.floor(distance*100) % #img.road.quads]
   img.car.quads.current = img.car.quads[math.floor(distance*10) % #img.car.quads]
   img.sign.quads.current = img.sign.quads[math.floor(distance*18) % #img.sign.quads]
+  img.tree.quads.current = img.tree.quads[math.floor(distance*18) % #img.tree.quads]
 
   if fuel <= 0 then Signal.emit('out_of_fuel') end
   if origspeed == 0 and speed > 0 then Signal.emit('started') end
@@ -162,6 +163,7 @@ function state.driving:draw()
   love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
   love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
   love.graphics.draw(img.sign.img, img.sign.quads.current, 0, 0)
+  love.graphics.draw(img.tree.img, img.tree.quads.current, 0, 0)
   --love.graphics.rectangle("fill",3,3,math.floor(speed),1)
   love.graphics.setColor(palette[1])
   love.graphics.print("E", 44, 1)

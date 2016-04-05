@@ -17,7 +17,6 @@ Experimental [#LOWREZJAM 2016](https://itch.io/jam/lowrezjam2016) game about lea
 ### sfx
 - from https://freesound.org under [CC-BY](http://creativecommons.org/licenses/by/3.0/) license
   - [engine sound](https://freesound.org/people/pempi/sounds/33460/)
-  - radio music [loop](https://freesound.org/people/levelclearer/sounds/339455/)
   - [radio tuning](https://freesound.org/people/trip_sound/sounds/190476/)
   - [car doors](https://freesound.org/people/phenoxy/sounds/195450/)
 
