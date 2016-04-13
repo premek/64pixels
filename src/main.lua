@@ -10,6 +10,7 @@ local state = {
 
 local love = love
 local debug = false
+local joystick
 
 local music = {}
 local img = {}
@@ -72,6 +73,13 @@ function love.load()
   scaleWindow()
   love.graphics.setDefaultFilter("nearest")
 
+  local joysticks = love.joystick.getJoysticks()
+  print("Joysticks: ", #joysticks)
+  if #joysticks > 0 then
+    joystick = joysticks[1]
+    print("Joystick: ", joystick:isGamepad(), joystick:getName(), joystick:getAxes())
+  end
+
   music[1] = love.audio.newSource( 'music/think of me think of us.mp3', 'stream' )
   music[2] = love.audio.newSource( 'music/i think i get it.mp3', 'stream' )
   music[1]:setVolume(0.85)
@@ -127,7 +135,7 @@ function state.driving:update(dt)
   if state.driving.d < state.driving.locked then
     state.driving.d = state.driving.d + dt
   else
-    local gas = love.keyboard.isDown("up") and fuel > 0
+    local gas = (love.keyboard.isDown("up") or joystick:isDown(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)) and fuel > 0
     if gas then
       speed = speed + dt*accel
       if not state.driving.lastgas then Signal.emit('accel_start') end
@@ -153,6 +161,11 @@ function state.driving:update(dt)
   if fuel <= 0 then Signal.emit('out_of_fuel') end
   if origspeed == 0 and speed > 0 then Signal.emit('started') end
   if origspeed > 0 and speed == 0 then Signal.emit('stopped') end
+
+  if joystick then
+    local motor = (speed+0.0001)/maxspeed * 0.5 + (state.driving.lastgas and 0.5 or 0)
+    joystick:setVibration(motor, motor)
+  end
 
 end
 
