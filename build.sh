@@ -2,7 +2,7 @@
 
 set -x
 
-P="64pixels"
+P="RoadTrip"
 
 LV="0.10.1"
 LZ="https://bitbucket.org/rude/love/downloads/love-${LV}-win32.zip"
@@ -56,7 +56,7 @@ unzip -o "target/love-win.zip" -d "target"
 tmp=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 mkdir "$tmp/$P"
 cat "target/love-${LV}-win32/love.exe" "target/${P}.love" > "$tmp/${P}/${P}.exe"
-cp  "target/love-${LV}-win32/*dll" "target/love-${LV}-win32/license*" "$tmp/$P"
+cp  target/love-"${LV}"-win32/*dll target/love-"${LV}"-win32/license* "$tmp/$P"
 cd "$tmp"
 zip -9 -r - "$P" > "${P}-win.zip"
 cd -
