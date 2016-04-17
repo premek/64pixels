@@ -1,6 +1,6 @@
 [![autobuild status](https://travis-ci.org/premek/64pixels.svg)](https://travis-ci.org/premek/64pixels)
 
-# 64 Pixels Road Trip
+# Road Trip
 Experimental [#LOWREZJAM 2016](https://itch.io/jam/lowrezjam2016) game about leaving / driving away
 
 ## Playing
