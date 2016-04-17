@@ -17,9 +17,9 @@ deploy:
     # travis encrypt <token>
     secure: ruidAIw29XHZQCIWdoNNKZl6EaFsjxO/I1wgi8ElcKxlFw+uVl8mAjdUNrnn33qXH8axinUNGy5QNM7Zse8Iyty/WptvLQqnaSGoGOD/PjQIETnkW4GRVpdsUEY5EjkFWFhge+KQJQa5lYE+F7QKzv47wYDVmYBB2x3W7e19RloSDaJGs7/fL56rAr66CGXYibVIV/M0QBvUL2HfjwGevIGu8YX0+MRWLKhGHPUKcR6jsA9AmyavJXfv+KeiEmSbFpQBYurCI19QFeKztt3cI0aG381ullmCgVk+x+Ejz8mlnvSH1sc3PZ2PxCtS0/qvthPGw+4GpfzERTjG4kNfz0oac5mHlW1l9hrNxdhEjhVloqBFHVwaYJqXYg6cktaQe0tzoi/D9qqRTOw7sxbjhwU+NZMAcBZOcnw7KgM2SFXaRdp+znQNKawfnvd9xpGu8AlIAZ8v4/1ofF7VlQrfQcp5LYi3iGK4xTIQAFx1+r2L1KGwgMEOzBxsV//HrZvTFdWVmTwOKsCJq2UGOAyag9S3MfyLgOOEuxl6O8id3FBx0/2j7LLT1uukqo8/fT8Rq7bEuOfq8YehH6dk49PW15dSTKzS9G/P972IL/RMct12LAqZYnAW59uEtN0tDZ/9twakt0MaXoNZE7Lh+FeKZx+Uif6rzP0X7WTozRBWyPo=
   file:
-  - target/64pixels.love
-  - target/64pixels-win.zip
-  - target/64pixels-web.zip
+  - target/RoadTrip.love
+  - target/RoadTrip-win.zip
+  - target/RoadTrip-web.zip
   on:
     tags: true
     all_branches: true
