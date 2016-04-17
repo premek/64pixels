@@ -2,12 +2,6 @@ local Signal = require 'lib.hump.signal'
 local Timer = require 'lib.hump.timer'
 local Gamestate = require "lib.hump.gamestate"
 
-local state = {
-  mainmenu = {d=0, locked = 0},
-  reading = {d=0, ends=0, speed=40000, textKey=0, sortedTextsKeys={}, displayed={}},
-  driving = {started=0, d=0, locked = 0, lastgas = false},
-}
-
 local love = love
 local debug = false
 local joystick
@@ -16,8 +10,15 @@ local music = {}
 local img = {}
 local sfx = {}
 
+local state = {
+  mainmenu = {d=0, locked = 0},
+  reading = {d=0, ends=0, speed=40, textKey=0, sortedTextsKeys={}, displayed={}},
+  driving = {started=0, d=0, locked = 0, lastgas = false, objects = {}},
+}
+
+
 local a=64 -- pixels
-local scale = 8
+local scale = 6
 
 local fuel = 1
 local speed = 0
@@ -35,8 +36,11 @@ local palette = {
 {196,32,41},
 }
 
+local outrotext = "Game over.                Thank you for playing... and sorry.        This \"game\" was made by Premek for #LOWREZJAM 2016. Music by id4rustle. SFX from freesound.org users pempi, trip_sound & phenoxy. Font by Robey Pointer.                Bye"
+
 local texts = {
-  [0] = "Drive away. To a different city. Or to the woods maybe. Listen to the radio. Watch the landscape. Stop sometimes to think and enjoy the countryside if you want to. Relax.          Hold up arrow key to accelerate",
+  [0] = "Drive away. To a different city. Or to the woods maybe. Listen to the radio. Watch the landscape. Stop sometimes to think and enjoy the countryside if you want to. Relax.          Hold up arrow key or joystick to accelerate",
+  --[[
   [2] = "Are we there yet?",
   [10] = "We will not get\nany further\nwithout more fuel",
   [50] = "There's no way back",
@@ -49,6 +53,7 @@ local texts = {
   "They are safe there",
   "They are safer where they are now",
   "I will miss her",
+  ]]--
 
 }
 
@@ -109,10 +114,12 @@ function love.load()
   end
   table.sort(state.reading.sortedTextsKeys)
 
-  Gamestate.registerEvents()
-  Gamestate.switch(state.driving)  --mainmenu
+  state.driving.objects = {{img.sign, 3}, {img.sign, 2}}
 
-  --Signal.emit('game_started')
+  Gamestate.registerEvents()
+  Gamestate.switch(state.mainmenu)
+
+  Signal.emit('game_started')
 end
 
 
@@ -135,7 +142,7 @@ function state.driving:update(dt)
   if state.driving.d < state.driving.locked then
     state.driving.d = state.driving.d + dt
   else
-    local gas = (love.keyboard.isDown("up") or joystick:isDown(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)) and fuel > 0
+    local gas = (love.keyboard.isDown("up") or (joystick and joystick:isDown(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16))) and fuel > 0
     if gas then
       speed = speed + dt*accel
       if not state.driving.lastgas then Signal.emit('accel_start') end
@@ -153,8 +160,20 @@ function state.driving:update(dt)
   distance = distance + speed * dt * 0.01
 
   img.fuel.quads.current = img.fuel.quads[math.floor(math.max(0,math.min(#img.fuel.quads-1,#img.fuel.quads*fuel)))]
+  img.speed.quads.current = img.speed.quads[math.floor(math.max(0,math.min(#img.speed.quads-1,#img.speed.quads*(1-speed/maxspeed))))]
   img.road.quads.current = img.road.quads[math.floor(distance*100) % #img.road.quads]
   img.car.quads.current = img.car.quads[math.floor(distance*10) % #img.car.quads]
+--[[
+  for i=#state.driving.objects,1,-1 do
+    local o = state.driving.objects[i]
+    o[2] = o[2] + (math.floor(speed*dt*1.8) % #o[1].quads)
+    if o[2] > #o[1].quads then
+      table.remove(state.driving.objects, i)
+    end
+  end
+  ]]
+
+
   img.sign.quads.current = img.sign.quads[math.floor(distance*18) % #img.sign.quads]
   img.tree.quads.current = img.tree.quads[math.floor(distance*18) % #img.tree.quads]
 
@@ -172,17 +191,30 @@ end
 function state.driving:draw()
   love.graphics.setColor(255,255,255)
   love.graphics.draw(img.bg1.img, 0, 0)
-  love.graphics.draw(img.fuel.img, img.fuel.quads.current, 0, 0)
-  love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
-  love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
-  love.graphics.draw(img.sign.img, img.sign.quads.current, 0, 0)
-  love.graphics.draw(img.tree.img, img.tree.quads.current, 0, 0)
-  --love.graphics.rectangle("fill",3,3,math.floor(speed),1)
+
   love.graphics.setColor(palette[1])
   love.graphics.print("E", 44, 1)
   love.graphics.print("F", 60, 1)
+  love.graphics.print("km/h", 3, 1)
+  love.graphics.printf("km", 0, 1, a, "center")
+  love.graphics.setColor(palette[5])
+  love.graphics.printf(math.floor(distance/10), 0, 10, a, "center")
+
+  love.graphics.setColor(255,255,255)
+  love.graphics.draw(img.fuel.img, img.fuel.quads.current, 0, 0)
+  love.graphics.draw(img.speed.img, img.speed.quads.current, 0, 0)
+  love.graphics.draw(img.road.img, img.road.quads.current, 0, 0)
+  love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
+  --[[
+  for _,v in ipairs(state.driving.objects) do
+    love.graphics.draw(v[1].img, img.sign.quads[v[2] ], 0, 0)
+  end
+  ]]
+  love.graphics.draw(img.sign.img, img.sign.quads.current, 0, 0)
+  love.graphics.draw(img.tree.img, img.tree.quads.current, 0, 0)
 
   if debug then
+    love.graphics.setColor(palette[1])
     love.graphics.printf(math.floor(speed), 0, 1, a, "center")
     love.graphics.print(math.floor(distance), 1, 1)
     love.graphics.print(math.floor(fuel*1000)/1000, 1, 8)
@@ -195,12 +227,16 @@ end
 -------------- mainmenu
 function state.mainmenu:update(dt)
   state.mainmenu.d = state.mainmenu.d + dt
+  if state.mainmenu.d > state.mainmenu.locked
+    and joystick and joystick:isDown(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16) then
+      Signal.emit('menu_start')
+  end
 end
 function state.mainmenu:draw()
   love.graphics.setColor(palette[3])
   love.graphics.rectangle("fill", 0, 0, a, a)
   love.graphics.setColor(palette[1])
-  love.graphics.printf("64 Pixels\nRoad Trip", 0, 10, a, "center")
+  love.graphics.printf("Road Trip", 0, 10, a, "center")
   if state.mainmenu.d > state.mainmenu.locked then
     love.graphics.printf("Press any key\nto start", 0, 40, a, "center")
   end
@@ -210,7 +246,7 @@ end
 
 function state.mainmenu:keypressed(key)
   if state.mainmenu.d > state.mainmenu.locked then
-    Signal.emit('menu_start') -- FIXME
+    Signal.emit('menu_start')
   end
 end
 
@@ -221,9 +257,11 @@ function state.reading:update(dt)
   state.reading.d = state.reading.d + dt
 
   if state.reading.d > state.reading.ends then
-    state.reading.displayed[state.reading.textKey] = true
-    Gamestate.switch(state.driving)
-    Signal.emit('driving_started')
+    if fuel > 0 then
+      state.reading.displayed[state.reading.textKey] = true
+      Gamestate.switch(state.driving)
+      Signal.emit('driving_started')
+    end
   end
 end
 
@@ -234,7 +272,9 @@ function state.reading:draw()
   love.graphics.draw(img.car.img, img.car.quads.current, 0, 0)
 
   love.graphics.setColor(palette[1])
-  love.graphics.print(texts[state.reading.textKey], 64 - math.floor(state.reading.d*state.reading.speed), 9)
+  local text = texts[state.reading.textKey]
+  if fuel <= 0 then text = outrotext end
+  love.graphics.print(text, a - math.floor(state.reading.d*state.reading.speed), 9)
 end
 
 
@@ -258,6 +298,7 @@ end
 
 Signal.register('stopped', startReading)
 Signal.register('menu_start', startReading)
+Signal.register('out_of_fuel', function () Timer.after(5, function() Gamestate.push(state.reading) end ) end )
 
 
 
